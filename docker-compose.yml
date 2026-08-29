@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: AspireApp-Productos.ApiService/Dockerfile
+    container_name: aspire_products_api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - PRODUCTS_CONNECTION=Data Source=/app/data/products.db
+    volumes:
+      - ./data/api:/app/data
+    ports:
+      - "7504:80"
+
+  web:
+    build:
+      context: .
+      dockerfile: AspireApp-Productos.Web/Dockerfile
+    container_name: aspire_products_web
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ApiBaseUrl=http://api:80
+    ports:
+      - "5140:80"
+    depends_on:
+      - api
+
+volumes:
+  data:
+    driver: local
