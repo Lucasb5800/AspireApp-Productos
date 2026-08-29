@@ -15,12 +15,30 @@ builder.Services.AddEndpointsApiExplorer();
 // Configure EF Core: SQLite for Development, env var for Production
 {
     var env = builder.Environment;
-    var connectionString = env.IsDevelopment()
-        ? $"Data Source={Path.Combine(AppContext.BaseDirectory, "products.db")}" 
-        : Environment.GetEnvironmentVariable("PRODUCTS_CONNECTION") ?? builder.Configuration.GetConnectionString("DefaultConnection");
-
-    builder.Services.AddDbContext<AspireApp_Productos.ApiService.Data.AppDbContext>(options =>
-        options.UseSqlite(connectionString));
+    string connectionString;
+    if (env.IsDevelopment())
+    {
+        connectionString = $"Data Source={Path.Combine(AppContext.BaseDirectory, "products.db")}";
+        builder.Services.AddDbContext<AspireApp_Productos.ApiService.Data.AppDbContext>(options =>
+            options.UseSqlite(connectionString));
+    }
+    else
+    {
+        // In non-development environments use the configured connection string from configuration
+        connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+        // If the connection string seems to be for SQLite, use UseSqlite, otherwise assume SQL Server
+        if (connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase) && connectionString.EndsWith(".db", StringComparison.OrdinalIgnoreCase))
+        {
+            builder.Services.AddDbContext<AspireApp_Productos.ApiService.Data.AppDbContext>(options =>
+                options.UseSqlite(connectionString));
+        }
+        else
+        {
+            // Default to SQL Server for production-style connection strings
+            builder.Services.AddDbContext<AspireApp_Productos.ApiService.Data.AppDbContext>(options =>
+                options.UseSqlServer(connectionString));
+        }
+    }
 }
 
 // Allow CORS (frontend will set its ApiBaseUrl in configuration)
