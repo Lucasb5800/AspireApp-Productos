@@ -1,0 +1,132 @@
+@page "/products"
+@using AspireApp_Productos.Web.Models
+@using System.Net.Http.Json
+@inject IHttpClientFactory HttpFactory
+
+<h3>Productos</h3>
+
+<div class="mb-3">
+    <button class="btn btn-primary me-2" @onclick="Refresh">Actualizar</button>
+    <button class="btn btn-success me-2" @onclick="ShowAdd">Agregar</button>
+    <button class="btn btn-danger" @onclick="DeleteSelected" disabled="@(SelectedId == null)">Eliminar</button>
+</div>
+
+@if (showAddForm)
+{
+    <div class="card mb-3 p-3">
+        <div class="mb-2">
+            <input class="form-control" placeholder="Nombre" @bind="newProduct.Name" />
+        </div>
+        <div class="mb-2">
+            <input class="form-control" placeholder="Descripción" @bind="newProduct.Description" />
+        </div>
+        <div class="mb-2">
+            <input class="form-control" placeholder="Precio" type="number" step="0.01" @bind="newProduct.Price" />
+        </div>
+        <div>
+            <button class="btn btn-primary me-2" @onclick="AddProduct">Guardar</button>
+            <button class="btn btn-secondary" @onclick="CancelAdd">Cancelar</button>
+        </div>
+    </div>
+}
+
+@if (products == null)
+{
+    <p>Cargando...</p>
+}
+else if (!products.Any())
+{
+    <p>No hay productos.</p>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Creado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in products)
+            {
+                <tr class="@(SelectedId == p.Id ? "table-active" : "")" @onclick="() => Select(p.Id)">
+                    <td>@p.Id</td>
+                    <td>@p.Name</td>
+                    <td>@p.Description</td>
+                    <td>@p.Price</td>
+                    <td>@p.CreatedAt.ToLocalTime()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    List<Product>? products;
+    int? SelectedId;
+    bool showAddForm = false;
+    Product newProduct = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    HttpClient Client => HttpFactory.CreateClient("Api");
+
+    async Task LoadProducts()
+    {
+        products = await Client.GetFromJsonAsync<List<Product>>("api/products");
+        SelectedId = null;
+        StateHasChanged();
+    }
+
+    Task Refresh() => LoadProducts();
+
+    void ShowAdd()
+    {
+        showAddForm = true;
+        newProduct = new Product();
+    }
+
+    void CancelAdd()
+    {
+        showAddForm = false;
+        newProduct = new Product();
+    }
+
+    async Task AddProduct()
+    {
+        var res = await Client.PostAsJsonAsync("api/products", newProduct);
+        if (res.IsSuccessStatusCode)
+        {
+            showAddForm = false;
+            await LoadProducts();
+        }
+        else
+        {
+            // manejar error sencillo
+        }
+    }
+
+    async Task DeleteSelected()
+    {
+        if (SelectedId == null)
+            return;
+
+        var res = await Client.DeleteAsync($"api/products/{SelectedId}");
+        if (res.IsSuccessStatusCode || res.StatusCode == System.Net.HttpStatusCode.NoContent)
+        {
+            await LoadProducts();
+        }
+    }
+
+    void Select(int id)
+    {
+        SelectedId = id;
+    }
+}
