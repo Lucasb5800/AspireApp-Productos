@@ -1,0 +1,61 @@
+name: Deploy Aspire Solution to GCP
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Authenticate to GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Configure Docker for GCP Artifact Registry
+      run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init & Apply
+      run: |
+        cd terraform
+        terraform init
+        terraform apply -auto-approve \
+          -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+          -var="db_user=${{ secrets.GCP_DB_USER }}" \
+          -var="db_password=${{ secrets.GCP_DB_PASSWORD }}"
+
+    - name: Build and Push Docker Images
+      run: |
+        REGISTRY="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/app"
+        
+        # Build y Push del Backend API
+        docker build -f Dockerfile.api -t $REGISTRY/apiservice:1.0 .
+        docker push $REGISTRY/apiservice:1.0
+
+        # Build y Push del Frontend Web
+        docker build -f Dockerfile.web -t $REGISTRY/web:1.0 .
+        docker push $REGISTRY/web:1.0
+
+    - name: Update Cloud Run Deployments
+      run: |
+        REGISTRY="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/app"
+        
+        gcloud run deploy aspire-api \
+          --image $REGISTRY/apiservice:1.0 \
+          --region us-central1 \
+          --platform managed
+
+        gcloud run deploy aspire-web \
+          --image $REGISTRY/web:1.0 \
+          --region us-central1 \
+          --platform managed
