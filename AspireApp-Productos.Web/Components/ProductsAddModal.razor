@@ -1,0 +1,79 @@
+@using AspireApp_Productos.Web.Models
+@rendermode InteractiveServer
+@implements IDisposable
+
+@if (visible)
+{
+    <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:1050;">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);" @onclick="Cancel"></div>
+        <div class="card p-3" style="z-index:1060;min-width:320px;max-width:600px;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="m-0">Agregar producto</h5>
+                <button type="button" class="btn-close" aria-label="Close" @onclick="Cancel"></button>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Nombre</label>
+                <input class="form-control" placeholder="Nombre" @bind="model.Name" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Descripción</label>
+                <input class="form-control" placeholder="Descripción" @bind="model.Description" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Precio</label>
+                <input class="form-control" placeholder="Precio" type="number" step="0.01" @bind="model.Price" />
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary me-2" @onclick="Cancel">Cancelar</button>
+                <button type="button" class="btn btn-primary" @onclick="Save">Guardar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    bool visible;
+    Product model = new();
+
+    [Parameter]
+    public EventCallback<Product> OnSaved { get; set; }
+
+    public async Task Show()
+    {
+        model = new Product();
+        visible = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async Task Hide()
+    {
+        visible = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(model.Name) || model.Price <= 0)
+        {
+            // simple validation: require name and positive price
+            return;
+        }
+
+        if (OnSaved.HasDelegate)
+        {
+            await OnSaved.InvokeAsync(model);
+        }
+
+        await Hide();
+    }
+
+    Task Cancel()
+    {
+        return Hide();
+    }
+
+    public void Dispose()
+    {
+        // nothing to dispose right now
+    }
+}
