@@ -1,22 +1,19 @@
+# Etapa de compilación
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
-
-# Copy csproj and restore as distinct layers
 COPY ["AspireApp-Productos.Web/AspireApp-Productos.Web.csproj", "AspireApp-Productos.Web/"]
 RUN dotnet restore "AspireApp-Productos.Web/AspireApp-Productos.Web.csproj"
-
-# Copy everything else and publish
 COPY . .
-WORKDIR /src/AspireApp-Productos.Web
-RUN dotnet publish -c Release -o /app/publish
+WORKDIR "/src/AspireApp-Productos.Web"
+RUN dotnet build "AspireApp-Productos.Web.csproj" -c Release -o /app/build
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM build AS publish
+RUN dotnet publish "AspireApp-Productos.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Etapa final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
-COPY --from=build /app/publish .
-
-# Expose port and allow configuration of API base url
-ENV ASPNETCORE_URLS="http://+:80"
-ENV ApiBaseUrl="http://api:80"
-
-EXPOSE 80
+EXPOSE 5000
+ENV ASPNETCORE_URLS=http://+:5000
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "AspireApp-Productos.Web.dll"]

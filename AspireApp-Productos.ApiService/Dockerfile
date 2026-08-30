@@ -1,23 +1,19 @@
+# Etapa de compilación
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
-
-# Copy csproj and restore as distinct layers
 COPY ["AspireApp-Productos.ApiService/AspireApp-Productos.ApiService.csproj", "AspireApp-Productos.ApiService/"]
 RUN dotnet restore "AspireApp-Productos.ApiService/AspireApp-Productos.ApiService.csproj"
-
-# Copy everything else and publish
 COPY . .
-WORKDIR /src/AspireApp-Productos.ApiService
-RUN dotnet publish -c Release -o /app/publish
+WORKDIR "/src/AspireApp-Productos.ApiService"
+RUN dotnet build "AspireApp-Productos.ApiService.csproj" -c Release -o /app/build
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM build AS publish
+RUN dotnet publish "AspireApp-Productos.ApiService.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Etapa final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
-COPY --from=build /app/publish .
-
-# Expose port and default environment for production
-ENV ASPNETCORE_URLS="http://+:80"
-# By default use a sqlite file inside the container; override with PRODUCTS_CONNECTION env var in production
-ENV PRODUCTS_CONNECTION="Data Source=/app/products.db"
-
-EXPOSE 80
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "AspireApp-Productos.ApiService.dll"]
