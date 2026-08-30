@@ -11,6 +11,8 @@ builder.Services.AddProblemDetails();
 // Add controllers and EF DbContext
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+// Swagger/OpenAPI (Swashbuckle)
+builder.Services.AddSwaggerGen();
 
 // Configure EF Core: SQLite for Development, env var for Production
 {
@@ -57,7 +59,20 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
+    // Use Swashbuckle UI in development
+    app.UseSwagger();
+    app.UseSwaggerUI();
     app.MapOpenApi();
+}
+else
+{
+    // Optionally enable Swagger in non-development if environment variable explicitly enables it
+    var swaggerEnabled = Environment.GetEnvironmentVariable("SWAGGER_ENABLED");
+    if (!string.IsNullOrEmpty(swaggerEnabled) && swaggerEnabled.Equals("true", StringComparison.OrdinalIgnoreCase))
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
 }
 
 app.UseCors("AllowWeb");
