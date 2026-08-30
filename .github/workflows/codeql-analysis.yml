@@ -24,7 +24,7 @@ jobs:
           languages: csharp
 
       - name: Build
-        run: dotnet build --no-restore --projects AspireApp-Productos.sln --exclude AspireApp-Productos.AppHost 
+        run: dotnet build AspireApp-Productos.sln --no-restore -p:ExcludeProjects="*AppHost*"
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
