@@ -23,10 +23,8 @@ jobs:
         with:
           languages: csharp
 
-      - name: Install Aspire CLI
-        run: |
-            dotnet workload restore
-            dotnet workload install aspire  
+      - name: Build
+        run: dotnet build --no-restore --projects AspireApp-Productos.sln --exclude AspireApp-Productos.AppHost 
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3

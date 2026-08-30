@@ -22,7 +22,7 @@ jobs:
           push: false
           load: true
           tags: aspireapp-productos:${{ github.sha }}
-          file: AspireApp-Produtos.Web/Dockerfile
+          file: AspireApp-Productos.Web/Dockerfile
           context: .
 
       - name: Scan image with Trivy
