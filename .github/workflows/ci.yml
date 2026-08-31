@@ -26,7 +26,7 @@ jobs:
       - name: Start Docker daemon
         run: |
           sudo service docker start || sudo systemctl start docker
-          docker ps  # Verify docker is running
+          docker ps
 
       - name: Restore
         run: dotnet restore
