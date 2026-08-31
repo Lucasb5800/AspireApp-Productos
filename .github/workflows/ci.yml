@@ -55,6 +55,9 @@ jobs:
         env:
           DOCKER_HOST: unix:///var/run/docker.sock
           ASPIRE_ALLOW_UNSECURED_TRANSPORT: true
+          ASPNETCORE_ENVIRONMENT: Development  # Fuerza desarrollo en CI
+          TEST_BUILD_TIMEOUT_SECONDS: 600       # 10 minutos
+          TEST_REQUEST_TIMEOUT_SECONDS: 120     # 2 minutos por request
 
       - name: Publish
         run: dotnet publish -c Release -o ./publish
