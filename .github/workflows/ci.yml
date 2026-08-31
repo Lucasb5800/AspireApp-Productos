@@ -22,6 +22,11 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
+      - name: Install Aspire CLI
+        run: |
+          dotnet workload restore
+          dotnet workload install aspire
       
       - name: Start Docker daemon
         run: |
@@ -33,7 +38,7 @@ jobs:
 
       - name: Install dotnet-format (tool)
         run: |
-          dotnet tool install --global dotnet-format --version 7.* || true
+          dotnet tool install --global dotnet-format --version 10.* || true
         env:
           PATH: ${{ env.PATH }}:/home/runner/.dotnet/tools
 
