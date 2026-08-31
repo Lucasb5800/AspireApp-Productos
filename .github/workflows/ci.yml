@@ -50,13 +50,11 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -c Release
 
-      - name: Build Docker Images
-        run: |
-          docker build -f AspireApp-Productos.ApiService/Dockerfile -t aspireapp-productos-apiservice:latest .
-          docker build -f AspireApp-Productos.Web/Dockerfile -t aspireapp-productos-web:latest .
-
       - name: Test
         run: dotnet test --no-build -c Release --logger:"trx;LogFileName=test-results.trx"
+        env:
+          DOCKER_HOST: unix:///var/run/docker.sock
+          ASPIRE_ALLOW_UNSECURED_TRANSPORT: true
 
       - name: Publish
         run: dotnet publish -c Release -o ./publish
