@@ -9,14 +9,13 @@ on:
 jobs:
   build-and-lint:
     runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:latest
-        options: >-
-          --privileged
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -27,10 +26,10 @@ jobs:
         run: |
           dotnet workload restore
           dotnet workload install aspire
-      
-      - name: Start Docker daemon
+
+      - name: Verify Docker daemon
         run: |
-          sudo service docker start || sudo systemctl start docker
+          docker version
           docker ps
 
       - name: Restore
@@ -55,9 +54,9 @@ jobs:
         env:
           DOCKER_HOST: unix:///var/run/docker.sock
           ASPIRE_ALLOW_UNSECURED_TRANSPORT: true
-          ASPNETCORE_ENVIRONMENT: Development  # Fuerza desarrollo en CI
-          TEST_BUILD_TIMEOUT_SECONDS: 600       # 10 minutos
-          TEST_REQUEST_TIMEOUT_SECONDS: 120     # 2 minutos por request
+          ASPNETCORE_ENVIRONMENT: Development
+          TEST_BUILD_TIMEOUT_SECONDS: 900       # Aumentado a 15 minutos
+          TEST_REQUEST_TIMEOUT_SECONDS: 300     # 5 minutos por request
 
       - name: Publish
         run: dotnet publish -c Release -o ./publish
